@@ -1,0 +1,15 @@
+{
+  "name": "crown-focus-logger",
+  "version": "1.0.0",
+  "description": "Log Neurosity Crown focus/calm/brainwave data to a CSV, with a mock mode for testing without the headset.",
+  "main": "logger.js",
+  "scripts": {
+    "start": "node logger.js",
+    "mock": "MODE=mock node logger.js",
+    "live": "MODE=live node logger.js"
+  },
+  "dependencies": {
+    "@neurosity/sdk": "^7.0.0",
+    "dotenv": "^16.4.5"
+  }
+}
