@@ -72,12 +72,15 @@ This logger is step one of a planned series of BCI + AI projects:
 - [ ] **AI end-of-day debrief** — an LLM summarizes a day of data into plain-English insight
 - [ ] **Focus-aware tools** — e.g. notification triage and adaptive study aids that react to live cognitive state
 
-## What I learned
+## Skills demonstrated
 
-- EEG fundamentals: the five frequency bands and what each indicates
-- Consuming real-time, reactive data streams from a hardware SDK
-- Why dry-electrode signal quality matters — and gating data on it
-- Node.js project setup, environment-based configuration, and a Git/GitHub workflow
+- **JavaScript & Node.js** — wrote a configurable command-line tool from scratch, with a live terminal readout and clean shutdown handling.
+- **Real-time data integration** — used the Neurosity SDK to subscribe to live EEG streams (focus, calm, band power, signal quality) and sample them at a fixed interval.
+- **Handling imperfect sensor data** — averaged readings across eight electrodes and reduced signal quality to a worst-case flag, so unreliable data can be filtered rather than silently trusted.
+- **Practical architecture** — designed a mock/live dual mode so the whole pipeline can be developed and tested without the hardware attached.
+- **Secrets & config hygiene** — kept credentials and raw data out of version control using environment variables and `.gitignore`.
+- **Git & GitHub** — version-controlled from the first commit.
+- **Applied domain knowledge** — EEG frequency bands and the practical quirks of dry-electrode signal quality.
 
 ## Privacy & data
 
