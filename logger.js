@@ -1,15 +1,100 @@
+/**
+ * Crown Focus Logger
+ *
+ * Records focus, calm and five EEG band powers from a Neurosity Crown to a CSV
+ * file on this machine. Runs against real hardware (MODE=live) or against
+ * synthetic data (MODE=mock) so the pipeline can be developed with no headset.
+ *
+ * This file is deliberately dependency-free at the top level and self-contained:
+ * it is vendored as a single file by other projects (crown-debrief carries it as
+ * collector/logger.js), so it must never require a sibling file from this repo.
+ * The column list below is duplicated in web/schema.js and documented in
+ * docs/SCHEMA.md; if you change one, change all three.
+ */
+
 const fs = require("fs");
 const path = require("path");
 
+// ---------------- SCHEMA ----------------
+// Frozen. crown-debrief/core/csv.js parses exactly these columns.
+const COLUMNS = [
+  "timestamp_iso",
+  "epoch_ms",
+  "mode",
+  "focus",
+  "calm",
+  "alpha",
+  "beta",
+  "delta",
+  "theta",
+  "gamma",
+  "signal_quality",
+];
+const CSV_HEADER = COLUMNS.join(",") + "\n";
+
+// ---------------- CONFIG ----------------
+function intFromEnv(name, fallback, min) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === "") return fallback;
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < min) {
+    console.error(`Bad ${name}="${raw}". Expected a whole number >= ${min}.`);
+    process.exit(1);
+  }
+  return n;
+}
+
+if (process.argv.includes("--help") || process.argv.includes("-h")) {
+  console.log(`Crown Focus Logger
+
+  node logger.js                      record synthetic data (no headset needed)
+  MODE=live node logger.js            record from a real Neurosity Crown
+
+Environment variables (all optional except the live-mode credentials):
+
+  MODE              mock | live                     default: mock
+  LOG_INTERVAL_MS   milliseconds between rows       default: 2000
+  OUT_FILE          output path                     default: focus-log.csv
+  DURATION_SEC      auto-stop after N seconds       default: 0 (until Ctrl+C)
+
+  NEUROSITY_EMAIL       required for MODE=live
+  NEUROSITY_PASSWORD    required for MODE=live
+  NEUROSITY_DEVICE_ID   optional, only if your account has several devices
+
+Columns written: ${COLUMNS.join(", ")}
+See docs/SCHEMA.md for what each column means.`);
+  process.exit(0);
+}
+
 const MODE = (process.env.MODE || "mock").toLowerCase();
-const LOG_INTERVAL_MS = parseInt(process.env.LOG_INTERVAL_MS || "2000", 10);
+const LOG_INTERVAL_MS = intFromEnv("LOG_INTERVAL_MS", 2000, 50);
 const OUT_FILE = process.env.OUT_FILE || "focus-log.csv";
-const DURATION_SEC = parseInt(process.env.DURATION_SEC || "0", 10);
+const DURATION_SEC = intFromEnv("DURATION_SEC", 0, 0);
 
-const CSV_HEADER =
-  "timestamp_iso,epoch_ms,mode,focus,calm,alpha,beta,delta,theta,gamma,signal_quality\n";
+if (MODE !== "mock" && MODE !== "live") {
+  console.error(`Bad MODE="${MODE}". Expected "mock" or "live".`);
+  process.exit(1);
+}
 
+// ---------------- OUTPUT FILE ----------------
 const outPath = path.resolve(OUT_FILE);
+
+// Appending rows under a header that does not match this schema silently
+// corrupts the log, and the corruption only shows up later during analysis.
+// Refuse instead, with an instruction the user can act on.
+if (fs.existsSync(outPath) && fs.statSync(outPath).size > 0) {
+  const firstLine = fs.readFileSync(outPath, "utf8").split("\n", 1)[0].trim();
+  if (firstLine !== CSV_HEADER.trim()) {
+    console.error(
+      `${outPath} already exists but its header does not match this schema.\n` +
+        `  found:    ${firstLine}\n` +
+        `  expected: ${CSV_HEADER.trim()}\n` +
+        `Refusing to append. Set OUT_FILE to a different path, or move that file aside.`,
+    );
+    process.exit(1);
+  }
+}
+
 const fileExisted = fs.existsSync(outPath) && fs.statSync(outPath).size > 0;
 const out = fs.createWriteStream(outPath, { flags: "a" });
 if (!fileExisted) out.write(CSV_HEADER);
@@ -17,17 +102,25 @@ if (!fileExisted) out.write(CSV_HEADER);
 let rowsWritten = 0;
 let stopping = false;
 
+// ---------------- TERMINAL READOUT ----------------
 function focusBar(focus) {
   const width = 20;
   const filled = Math.max(0, Math.min(width, Math.round(focus * width)));
   return "[" + "#".repeat(filled) + "-".repeat(width - filled) + "]";
 }
 
-function printStatus(focus, calm) {
-  const line = `${focusBar(focus)} focus ${(focus * 100).toFixed(0)}%  calm ${(calm * 100).toFixed(0)}%   rows=${rowsWritten}`;
-  process.stdout.write("\r" + line.padEnd(70));
+function printStatus(focus, calm, quality) {
+  const line =
+    `${focusBar(focus)} focus ${(focus * 100).toFixed(0)}%  ` +
+    `calm ${(calm * 100).toFixed(0)}%  signal ${quality}  rows=${rowsWritten}`;
+  process.stdout.write("\r" + line.padEnd(78));
 }
 
+function printWaiting(what) {
+  process.stdout.write("\r" + `Waiting for ${what}...`.padEnd(78));
+}
+
+// ---------------- WRITING ----------------
 function writeRow({ focus, calm, alpha, beta, delta, theta, gamma, signalQuality }) {
   const now = new Date();
   const row =
@@ -46,7 +139,7 @@ function writeRow({ focus, calm, alpha, beta, delta, theta, gamma, signalQuality
     ].join(",") + "\n";
   out.write(row);
   rowsWritten++;
-  printStatus(focus, calm);
+  printStatus(focus, calm, signalQuality);
 }
 
 function shutdown() {
@@ -54,12 +147,17 @@ function shutdown() {
   stopping = true;
   process.stdout.write("\n");
   out.end(() => {
-    console.log(`Saved ${rowsWritten} rows to ${outPath}`);
+    if (rowsWritten === 0) {
+      console.log(`No rows written. ${outPath} is unchanged or empty.`);
+    } else {
+      console.log(`Saved ${rowsWritten} rows to ${outPath}`);
+    }
     process.exit(0);
   });
 }
 
 process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 if (DURATION_SEC > 0) {
   setTimeout(shutdown, DURATION_SEC * 1000);
@@ -67,7 +165,10 @@ if (DURATION_SEC > 0) {
 
 // ---------------- MOCK MODE ----------------
 function runMock() {
-  console.log(`Crown Focus Logger — MOCK mode (interval ${LOG_INTERVAL_MS}ms)`);
+  console.log(
+    `Crown Focus Logger, MOCK mode. Interval ${LOG_INTERVAL_MS}ms. Writing to ${outPath}`,
+  );
+  console.log("Rows are labelled mode=mock and signal_quality=mock. This is synthetic data.");
 
   // Smooth drifting focus/calm via low-pass filtered random walks.
   let focus = 0.5;
@@ -76,6 +177,7 @@ function runMock() {
   let calmVel = 0;
 
   function step() {
+    if (stopping) return;
     focusVel = focusVel * 0.85 + (Math.random() - 0.5) * 0.05;
     calmVel = calmVel * 0.85 + (Math.random() - 0.5) * 0.05;
     focus = Math.max(0, Math.min(1, focus + focusVel));
@@ -89,16 +191,7 @@ function runMock() {
     const theta = Math.max(0, 0.15 + calm * 0.6 + n());
     const delta = Math.max(0, 0.3 + (1 - focus) * 0.3 + n());
 
-    writeRow({
-      focus,
-      calm,
-      alpha,
-      beta,
-      delta,
-      theta,
-      gamma,
-      signalQuality: "mock",
-    });
+    writeRow({ focus, calm, alpha, beta, delta, theta, gamma, signalQuality: "mock" });
   }
 
   step();
@@ -107,20 +200,28 @@ function runMock() {
 
 // ---------------- LIVE MODE ----------------
 async function runLive() {
-  require("dotenv").config();
-  const { Neurosity } = require("@neurosity/sdk");
+  // @neurosity/sdk 7.x ships "type": "module" with a CommonJS require entry
+  // point, so require() of it throws "exports is not defined in ES module
+  // scope". Dynamic import loads the ESM build and works from this CJS file.
+  const dotenv = await import("dotenv");
+  dotenv.config();
+  const { Neurosity } = await import("@neurosity/sdk");
 
   const email = process.env.NEUROSITY_EMAIL;
   const password = process.env.NEUROSITY_PASSWORD;
   const deviceId = process.env.NEUROSITY_DEVICE_ID;
 
   if (!email || !password) {
-    console.error("LIVE mode requires NEUROSITY_EMAIL and NEUROSITY_PASSWORD in .env");
+    console.error(
+      "LIVE mode needs NEUROSITY_EMAIL and NEUROSITY_PASSWORD.\n" +
+        "Copy .env.example to .env and fill them in, then run npm run live again.",
+    );
     process.exit(1);
   }
 
   const neurosity = new Neurosity(deviceId ? { deviceId } : {});
-  console.log("Crown Focus Logger — LIVE mode: logging in...");
+  console.log(`Crown Focus Logger, LIVE mode. Writing to ${outPath}`);
+  console.log("Logging in...");
   await neurosity.login({ email, password });
   console.log("Logged in. Subscribing to streams...");
 
@@ -135,12 +236,24 @@ async function runLive() {
     signalQuality: "unknown",
   };
 
+  // The write timer starts before any stream has delivered a value. Without
+  // this guard the first rows are focus=0, calm=0, which look like real
+  // readings but are just the initial state of the object above.
+  const seen = { focus: false, calm: false };
+  let announcedReady = false;
+
   neurosity.focus().subscribe((m) => {
-    if (m && typeof m.probability === "number") latest.focus = m.probability;
+    if (m && typeof m.probability === "number") {
+      latest.focus = m.probability;
+      seen.focus = true;
+    }
   });
 
   neurosity.calm().subscribe((m) => {
-    if (m && typeof m.probability === "number") latest.calm = m.probability;
+    if (m && typeof m.probability === "number") {
+      latest.calm = m.probability;
+      seen.calm = true;
+    }
   });
 
   neurosity.brainwaves("powerByBand").subscribe((bw) => {
@@ -156,20 +269,33 @@ async function runLive() {
 
   neurosity.signalQuality().subscribe((sq) => {
     if (!sq) return;
+    // Collapse eight electrodes to the worst one, so a single loose sensor is
+    // never hidden by seven good ones.
     const statuses = Object.values(sq).map((c) => (c && c.status) || "unknown");
-    if (statuses.includes("bad")) latest.signalQuality = "bad";
-    else if (statuses.includes("noContact")) latest.signalQuality = "noContact";
+    if (statuses.includes("noContact")) latest.signalQuality = "noContact";
+    else if (statuses.includes("bad")) latest.signalQuality = "bad";
     else if (statuses.every((s) => s === "great")) latest.signalQuality = "great";
     else if (statuses.some((s) => s === "good" || s === "great")) latest.signalQuality = "good";
     else latest.signalQuality = statuses[0] || "unknown";
   });
 
-  setInterval(() => writeRow({ ...latest }), LOG_INTERVAL_MS);
+  setInterval(() => {
+    if (stopping) return;
+    if (!seen.focus || !seen.calm) {
+      printWaiting("the first focus and calm readings");
+      return;
+    }
+    if (!announcedReady) {
+      announcedReady = true;
+      process.stdout.write("\r" + "Streams live. Recording.".padEnd(78) + "\n");
+    }
+    writeRow({ ...latest });
+  }, LOG_INTERVAL_MS);
 }
 
 if (MODE === "live") {
   runLive().catch((err) => {
-    console.error("LIVE mode failed:", err);
+    console.error("\nLIVE mode failed:", err && err.message ? err.message : err);
     process.exit(1);
   });
 } else {
