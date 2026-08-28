@@ -204,7 +204,9 @@ async function runLive() {
   // point, so require() of it throws "exports is not defined in ES module
   // scope". Dynamic import loads the ESM build and works from this CJS file.
   const dotenv = await import("dotenv");
-  dotenv.config();
+  // A CJS package reached through await import() may expose its exports on
+  // .default or hoisted onto the namespace, depending on the Node version.
+  (dotenv.default ?? dotenv).config();
   const { Neurosity } = await import("@neurosity/sdk");
 
   const email = process.env.NEUROSITY_EMAIL;
