@@ -1,91 +1,217 @@
 # Crown Focus Logger
 
-A Node.js tool that records real-time **focus**, **calm**, and **brainwave** data from a [Neurosity Crown](https://neurosity.co/) EEG headset to CSV. It's the data-collection foundation for a series of experiments exploring what you can build at the intersection of consumer brain–computer interfaces (BCI) and AI.
+Record your own [Neurosity Crown](https://neurosity.co/) focus sessions to a CSV
+file you own, then read them back in your browser.
 
-## About this project
+Two pieces, one data format:
 
-The Neurosity Crown is an 8-channel, dry-electrode EEG headset that streams brain metrics in real time. I started this project from a simple observation: **our subjective sense of our own focus is unreliable** — you can feel "locked in" while your measured focus is actually low. This logger captures objective focus data over time so it can be analyzed later: to find genuine peak-focus windows, see what disrupts concentration, and serve as the input for higher-level tools.
+- **`logger.js`**, a Node command-line tool that talks to the headset and writes
+  a CSV. This is the part that touches real hardware.
+- **`web/`**, a browser app that keeps your sessions on your own device and shows
+  you what is in them. No build step, no framework, no server.
 
-It's deliberately the *first* piece of a larger roadmap (see below). Almost every interesting BCI + AI idea — an end-of-day debrief, focus-aware notifications, adaptive study tools — depends first on reliably capturing this data. This project solves that base problem cleanly and reusably.
+Independent research using hardware loaned by the GFT Labs Digital Innovation Lab.
 
-## What it does
+## Privacy by design
 
-- Records **focus** and **calm** scores (0–1) plus power in all five EEG bands — delta, theta, alpha, beta, gamma — to a timestamped CSV every few seconds.
-- Runs in two modes:
-  - **Mock** — generates realistic synthetic data, so the full pipeline can be built and tested with no hardware.
-  - **Live** — connects to a real Crown via the Neurosity SDK.
-- Collapses 8-electrode **signal quality** into a per-row label (worst-case), so unreliable rows can be filtered out during analysis.
-- Configurable sampling interval, output file, and run duration; graceful shutdown with a session summary.
+Every session lives in your browser's own storage, on your own device, or in a
+file you downloaded and kept. There is no account, no central database, and
+nothing to sign into.
 
-## How it works
+Concretely:
 
-The core is a simple, reusable pattern:
+- The browser app makes **no network requests at all**. Not analytics, not
+  telemetry, not a font call once it is loaded.
+- Your Neurosity email and password are only ever typed into `.env` on your own
+  machine, for the command-line recorder. They are never entered into a web page.
+- Moving your log to another device means exporting a file and importing it
+  there. There is no sync, because sync would mean a server, and a server would
+  mean somebody else could read your data.
+- The author of this project cannot see your sessions. Not by policy. By there
+  being no mechanism.
 
-    authenticate → subscribe to device streams → keep the latest value of each → write one CSV row on a fixed interval
+The trade is real and worth stating plainly: if you clear your browser data, your
+sessions go with it. Export a backup for anything you want to keep.
 
-In live mode it subscribes to the Crown's focus, calm, brainwave (power-by-band), and signal-quality streams, holds the most recent value of each, and samples them on a timer. Band power is averaged across the 8 electrodes; signal quality collapses to worst-case so a single loose sensor is never hidden by the good ones.
+## Try it in a minute, with no headset
 
-## Tech stack
+```bash
+npm install       # only needed for live mode, but harmless now
+npm run sample    # writes a synthetic example session
+npm run web       # open the address it prints
+```
 
-- **Node.js** — JavaScript runtime
-- **@neurosity/sdk** — official Neurosity SDK for streaming EEG data
-- **dotenv** — environment-based credentials
-- **CSV** output for easy analysis in any spreadsheet or notebook
+Click **Load the example session**. Everything on the page is computed in your
+browser from that file.
 
-## Getting started
+You can also record a synthetic session in the page itself. It is clearly
+labelled as synthetic wherever it appears, so it cannot be mistaken for a real
+reading.
 
-Mock mode needs only Node.js — no headset required:
+## Record from a real Crown
 
-    node logger.js
+You need the headset and a Neurosity account.
 
-You'll see a live focus readout and a `focus-log.csv` fill up. Press Ctrl+C to stop.
+```bash
+npm install
+cp .env.example .env      # then fill in your Neurosity email and password
+npm run live              # Ctrl+C to stop
+```
 
-For a real Crown:
+That writes `focus-log.csv`. Open the browser app (`npm run web`), click
+**Import a CSV or backup**, and choose it.
 
-    npm install
-    cp .env.example .env      # then add your Neurosity login
-    npm run live
+To try the pipeline with no headset, use mock mode instead:
+
+```bash
+npm run mock
+```
 
 ### Configuration
 
-All optional, set via environment variables:
+All optional, set as environment variables.
 
-| Variable          | Default         | Description                                    |
-| ----------------- | --------------- | ---------------------------------------------- |
-| `MODE`            | `mock`          | `mock` (synthetic) or `live` (real Crown)      |
-| `LOG_INTERVAL_MS` | `2000`          | How often a row is written                     |
-| `OUT_FILE`        | `focus-log.csv` | Output filename                                |
-| `DURATION_SEC`    | `0`             | Auto-stop after N seconds (0 = until Ctrl+C)   |
+| Variable | Default | Description |
+| --- | --- | --- |
+| `MODE` | `mock` | `mock` (synthetic) or `live` (real Crown) |
+| `LOG_INTERVAL_MS` | `2000` | How often a row is written, minimum 50 |
+| `OUT_FILE` | `focus-log.csv` | Output path |
+| `DURATION_SEC` | `0` | Auto-stop after N seconds, 0 means run until Ctrl+C |
+| `NEUROSITY_EMAIL` | | Required for live mode |
+| `NEUROSITY_PASSWORD` | | Required for live mode |
+| `NEUROSITY_DEVICE_ID` | | Only if your account has several devices |
 
-## Output
+`node logger.js --help` prints the same table.
 
-CSV columns:
+## How it works
 
-    timestamp_iso, epoch_ms, mode, focus, calm, alpha, beta, delta, theta, gamma, signal_quality
+The recorder is one pattern:
 
-## Roadmap
+```
+authenticate -> subscribe to the device streams -> keep the latest value of
+each -> write one CSV row on a fixed timer
+```
 
-This logger is step one of a planned series of BCI + AI projects:
+It subscribes to focus, calm, `powerByBand` and signal quality, holds the most
+recent value of each, and samples them on the interval. Band power is averaged
+across the eight electrodes. Signal quality collapses to the worst electrode, so
+one loose sensor is never hidden by seven good ones.
 
-- [x] **Focus logger** — reliable data capture *(this repo)*
-- [ ] **Session charts** — visualize focus and calm over a session
-- [ ] **AI end-of-day debrief** — an LLM summarizes a day of data into plain-English insight
-- [ ] **Focus-aware tools** — e.g. notification triage and adaptive study aids that react to live cognitive state
+The browser app reads that CSV, stores each session in IndexedDB, and computes
+everything on screen from the rows. There is no model in the loop and no
+randomness: the same file always produces the same numbers.
 
-## Skills demonstrated
+## What the analysis actually reports
 
-- **JavaScript & Node.js** — wrote a configurable command-line tool from scratch, with a live terminal readout and clean shutdown handling.
-- **Real-time data integration** — used the Neurosity SDK to subscribe to live EEG streams (focus, calm, band power, signal quality) and sample them at a fixed interval.
-- **Handling imperfect sensor data** — averaged readings across eight electrodes and reduced signal quality to a worst-case flag, so unreliable data can be filtered rather than silently trusted.
-- **Practical architecture** — designed a mock/live dual mode so the whole pipeline can be developed and tested without the hardware attached.
-- **Secrets & config hygiene** — kept credentials and raw data out of version control using environment variables and `.gitignore`.
-- **Git & GitHub** — version-controlled from the first commit.
-- **Applied domain knowledge** — EEG frequency bands and the practical quirks of dry-electrode signal quality.
+For one session:
 
-## Privacy & data
+- length, number of readings, and the share with a usable signal
+- your focus range in that session (lowest, median, highest) and the same for calm
+- your longest unbroken stretch at or above your own median focus, with clock times
+- focus and calm plotted against the clock, with your median marked
+- average power in each of the five bands, over usable rows only
+- how the recording split by sensor contact
+- any pauses in the recording, and how long they were
 
-Brain data is sensitive. Credentials (`.env`) and all logged data (`*.csv`) are excluded from version control via `.gitignore` and never leave the local machine.
+Two rules it follows on purpose:
+
+1. **Rows with bad sensor contact are excluded, not averaged in.** A loose
+   electrode produces confident-looking numbers that mean nothing.
+2. **There is no fixed threshold for "focused".** Crown scores are not comparable
+   between people or between sittings, so every figure is scored against your own
+   median in that same session.
+
+## The data format
+
+Eleven columns, frozen, documented in **[docs/SCHEMA.md](docs/SCHEMA.md)**:
+
+```
+timestamp_iso,epoch_ms,mode,focus,calm,alpha,beta,delta,theta,gamma,signal_quality
+```
+
+The CSV is the spreadsheet export. Excel, Numbers and Sheets all open it
+directly, and a file that has been through a spreadsheet still imports.
+
+## Project layout
+
+```
+logger.js                 the command-line recorder. Self-contained on purpose:
+                          crown-debrief vendors this single file, so it must not
+                          require anything else in this repo.
+web/
+  index.html              the browser app
+  app.js                  wiring, rendering, import and export
+  schema.js               the CSV format: parse, serialise, what counts as usable
+  analysis.js             every number the app shows is computed here
+  charts.js               inline SVG charts, no charting library
+  store.js                IndexedDB, with a memory fallback
+  recorder.js             the in-browser synthetic recorder
+  styles.css              palette and cards taken from the Console Decoded page
+  sample-session.csv      synthetic example, generated by npm run sample
+scripts/
+  serve-web.js            a static file server for local use
+  make-sample.js          generates the example session
+test/run-tests.mjs        27 tests, no dependencies
+docs/
+  SCHEMA.md               the data model
+  USER-GUIDE.md           plain-language instructions for a non-engineer
+  PORTING.md              how to drop the app into the Astro site
+```
+
+## Tests
+
+```bash
+npm test
+```
+
+27 tests, no test framework. They cover the CSV format, the analysis, and the
+command-line tool end to end (including a regression test for the SDK import bug
+described below). They do **not** cover the browser UI or IndexedDB.
+
+## Honest notes
+
+**What was broken and is now fixed.** Live mode had never worked against a
+current SDK. `@neurosity/sdk` 7.x declares `"type": "module"` but its `require`
+entry point is CommonJS, so `require("@neurosity/sdk")` threw
+`exports is not defined in ES module scope` before login was ever attempted. It
+now loads via dynamic `import()`. Live mode also used to write rows before the
+streams had delivered anything, so a log began with real-looking `focus=0` rows;
+it now waits.
+
+**What is untested against hardware.** I have verified that the SDK loads,
+constructs a client, and that the credential path is reached. I have not run this
+against a physical Crown in this pass. The stream subscription code is unchanged
+from the version that was previously used with the headset, but treat live mode
+as needing one confirmation run.
+
+**Assumptions worth challenging.** That one CSV file is one session. That the
+mean across eight electrodes is a useful summary. That the median of a session is
+a fair personal baseline, when a short session may not contain enough range to
+have a meaningful median. That three times the typical interval is the right
+definition of a pause.
+
+**What is not production grade.** No schema version field in the file itself. No
+migration path if the columns ever change. IndexedDB has no quota handling beyond
+falling back to memory. The browser app has no automated tests. Import accepts
+any CSV with a `focus` column, so a malformed file can produce a session that
+parses but means nothing.
+
+**Deliberately not built.** No server, no account, no sync, no analytics. Those
+are not missing features. Adding any of them would break the one property this
+project is for.
+
+## Related
+
+- **[crown-debrief](https://github.com/samanthalin130/crown-debrief)** reads the
+  same CSV and writes a plain-English account of a session. It vendors this
+  logger as `collector/logger.js`. That vendored copy has the SDK bug described
+  above and needs the same fix.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
 
 ---
 
-*Built by Samantha Lin as part of an independent exploration of brain–computer interfaces and AI.*
+Built by Samantha Lin as part of an independent exploration of brain-computer
+interfaces and AI.

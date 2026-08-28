@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "crown-focus-logger",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve-web.js"],
+      "port": 4321
+    }
+  ]
+}

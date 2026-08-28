@@ -1,0 +1,265 @@
+/* Crown Focus Logger, browser app.
+   Palette, type scale and card treatment taken from the "Neurosity Console,
+   Decoded" page on crown-site-v2, so this drops onto that site without a
+   restyle. Every selector is prefixed .cfl so nothing escapes when embedded. */
+
+.cfl {
+  --ground: #0a111c;
+  --surface: #111c2b;
+  --surface-2: #152234;
+  --surface-3: #1c2c40;
+  --ink: #e7ecf3;
+  --ink-2: #a9b7ca;
+  --ink-3: #748399;
+  --line: #223247;
+  --line-2: #1a2838;
+  --accent: #3fb6c6;
+  --accent-soft: #0f2a33;
+  --accent-ink: #7fd6e1;
+  --what: #6fa3d6;
+  --what-soft: #12243a;
+  --mean: #b592e0;
+  --mean-soft: #211838;
+  --do: #6bc290;
+  --do-soft: #0f2a1e;
+  --limit: #d6a557;
+  --limit-soft: #271d0c;
+  --danger: #e2727f;
+  --danger-soft: #2c1216;
+
+  --t-delta: #a48bdc;
+  --t-theta: #86a2e6;
+  --t-alpha: #55c3dc;
+  --t-beta: #4fc9bc;
+  --t-gamma: #a9ce8e;
+
+  --focus-line: #3fb6c6;
+  --calm-line: #b592e0;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 15.4px 37.4px -18px rgba(0, 0, 0, 0.8);
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.cfl * { box-sizing: border-box; }
+
+/* Standalone use only. Inside the Astro site the page ground already exists. */
+body.cfl-standalone { margin: 0; background: var(--ground); }
+
+/* Embedded in crown-site-v2: its header is fixed and 98px tall, and the theme
+   leaves the top of main to each page. Reserve it, the way console-decoded does. */
+.cfl.cfl-embedded { padding-top: 98px; }
+
+.cfl .rail { max-width: 1100px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 48px); }
+
+/* ---------- header ---------- */
+.cfl .eyebrow {
+  font-family: var(--mono); font-size: 12.65px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--accent); margin: 0 0 14px;
+}
+.cfl h1 {
+  font-size: clamp(32px, 4.2vw, 50px); font-weight: 700; letter-spacing: -0.025em;
+  line-height: 1.05; margin: 0 0 16px; text-wrap: balance;
+}
+.cfl .stand { font-size: 20px; color: var(--ink-2); max-width: 66ch; margin: 0 0 20px; }
+.cfl header { padding: 44px 0 24px; }
+
+.cfl h2 { font-size: 26px; font-weight: 650; letter-spacing: -0.018em; margin: 0 0 6px; }
+.cfl h3 { font-size: 18px; font-weight: 600; margin: 0 0 6px; }
+.cfl .slede { font-size: 16px; color: var(--ink-2); max-width: 76ch; margin: 0 0 20px; }
+.cfl p { margin: 0 0 12px; }
+.cfl code {
+  font-family: var(--mono); font-size: 0.85em; background: var(--surface-3);
+  border: 1px solid var(--line-2); padding: 1px 6px; border-radius: 4px;
+}
+
+/* ---------- privacy banner ---------- */
+.cfl .privacy {
+  border-left: 3px solid var(--do); background: var(--do-soft);
+  border-radius: 0 10px 10px 0; padding: 16px 20px; margin: 0 0 28px;
+}
+.cfl .privacy p { margin: 0; font-size: 15.5px; color: var(--ink); }
+.cfl .privacy b { color: var(--do); }
+
+.cfl .warn {
+  border-left: 3px solid var(--limit); background: var(--limit-soft);
+  border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 0 0 20px;
+  font-size: 15px; color: var(--ink-2);
+}
+.cfl .warn b { color: var(--limit); }
+.cfl .warn.hide, .cfl .hide { display: none !important; }
+
+/* ---------- tabs ---------- */
+.cfl .tabs {
+  display: flex; gap: 6px; border-bottom: 1px solid var(--line);
+  margin: 0 0 28px; flex-wrap: wrap;
+}
+.cfl .tab {
+  font: inherit; font-size: 15px; font-weight: 600; background: none; border: none;
+  border-bottom: 2px solid transparent; color: var(--ink-3);
+  padding: 10px 16px; cursor: pointer; margin-bottom: -1px;
+}
+.cfl .tab:hover { color: var(--ink); }
+.cfl .tab[aria-selected="true"] { color: var(--accent-ink); border-bottom-color: var(--accent); }
+.cfl .view[hidden] { display: none; }
+
+/* ---------- cards ---------- */
+.cfl .card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 20px 22px; box-shadow: var(--shadow); margin: 0 0 16px;
+}
+.cfl .card .k {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-3); display: block; margin: 0 0 8px;
+}
+.cfl .cards2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 800px) { .cfl .cards2 { grid-template-columns: 1fr; } }
+
+/* takeaway grid, the Console Decoded .tk pattern */
+.cfl .tkgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0 0 20px; }
+@media (max-width: 900px) { .cfl .tkgrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .cfl .tkgrid { grid-template-columns: 1fr; } }
+.cfl .tk {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 16px 18px; box-shadow: var(--shadow);
+}
+.cfl .tk .n {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent); font-weight: 600; display: block; margin-bottom: 8px;
+}
+.cfl .tk .big {
+  font-family: var(--mono); font-size: 30px; font-weight: 600; color: var(--ink);
+  display: block; line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.cfl .tk .sub { font-size: 13.5px; color: var(--ink-3); display: block; margin-top: 6px; }
+
+/* ---------- buttons ---------- */
+.cfl button.btn {
+  font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2);
+  border-radius: 8px; padding: 9px 16px;
+}
+.cfl button.btn:hover { border-color: var(--accent); color: var(--accent-ink); }
+.cfl button.btn.primary { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
+.cfl button.btn.primary:hover { background: #143844; }
+.cfl button.btn.danger { color: var(--danger); border-color: var(--line); }
+.cfl button.btn.danger:hover { border-color: var(--danger); background: var(--danger-soft); }
+.cfl button.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.cfl .btnrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.cfl :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* ---------- record view ---------- */
+.cfl .readout { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin: 4px 0 14px; }
+.cfl .meter { flex: 1 1 260px; min-width: 220px; }
+.cfl .meter .lbl {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-3); display: flex; justify-content: space-between; margin-bottom: 6px;
+}
+.cfl .meter .lbl b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.cfl .track { height: 8px; border-radius: 6px; background: var(--surface-3); overflow: hidden; }
+.cfl .fill { display: block; height: 100%; border-radius: 6px; transition: width 0.35s ease; }
+.cfl .fill.focus { background: var(--focus-line); }
+.cfl .fill.calm { background: var(--calm-line); }
+.cfl .elapsed {
+  font-family: var(--mono); font-size: 30px; font-variant-numeric: tabular-nums;
+  color: var(--ink); flex: 0 0 auto;
+}
+.cfl .elapsed span { display: block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+
+.cfl .cmd {
+  font-family: var(--mono); font-size: 13.5px; background: #080e18; border: 1px solid var(--line-2);
+  border-radius: 8px; padding: 12px 14px; color: var(--ink-2); overflow-x: auto;
+  white-space: pre; margin: 10px 0;
+}
+
+/* ---------- session list ---------- */
+.cfl .slist { display: flex; flex-direction: column; gap: 10px; }
+.cfl .srow {
+  display: flex; align-items: center; gap: 16px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px;
+  box-shadow: var(--shadow); flex-wrap: wrap;
+}
+.cfl .srow .stitle { flex: 1 1 240px; min-width: 0; }
+.cfl .srow .stitle b { display: block; font-size: 16px; font-weight: 600; }
+.cfl .srow .stitle span { font-size: 13.5px; color: var(--ink-3); }
+.cfl .srow .sstat {
+  font-family: var(--mono); font-size: 13px; color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--line-2); padding: 4px 10px; border-radius: 6px; white-space: nowrap;
+}
+.cfl .tag {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase;
+  font-weight: 600; padding: 3px 8px; border-radius: 5px; white-space: nowrap;
+}
+.cfl .tag.synthetic { background: var(--limit-soft); color: var(--limit); }
+.cfl .tag.real { background: var(--do-soft); color: var(--do); }
+.cfl .empty { color: var(--ink-3); font-size: 15px; margin: 0; }
+
+/* ---------- charts ---------- */
+.cfl .chart { width: 100%; height: auto; display: block; }
+.cfl .chart .grid { stroke: var(--line-2); stroke-width: 1; }
+.cfl .chart .axis { fill: var(--ink-3); font-family: var(--mono); font-size: 11px; }
+.cfl .chart .thresh { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 4 4; }
+.cfl .chart .stretch { fill: var(--accent); opacity: 0.09; }
+.cfl .chart .series { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.cfl .chart .series.focus { stroke: var(--focus-line); }
+.cfl .chart .series.calm { stroke: var(--calm-line); opacity: 0.75; }
+.cfl .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink-3); margin-top: 8px; }
+.cfl .legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; }
+.cfl .legend i.focus { background: var(--focus-line); }
+.cfl .legend i.calm { background: var(--calm-line); }
+.cfl .legend i.thresh { background: var(--ink-3); }
+
+.cfl .bandrows { display: flex; flex-direction: column; gap: 8px; }
+.cfl .bandrow { display: grid; grid-template-columns: 62px 1fr 58px; align-items: center; gap: 12px; }
+.cfl .bandname { font-family: var(--mono); font-size: 12.5px; font-weight: 600; text-transform: uppercase; }
+.cfl .bandval { font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); text-align: right; font-variant-numeric: tabular-nums; }
+.cfl .bandtrack { height: 8px; border-radius: 6px; background: var(--surface-3); overflow: hidden; }
+.cfl .bandfill { display: block; height: 100%; border-radius: 6px; }
+.cfl .t-delta { color: var(--t-delta); } .cfl .t-bg-delta { background: var(--t-delta); }
+.cfl .t-theta { color: var(--t-theta); } .cfl .t-bg-theta { background: var(--t-theta); }
+.cfl .t-alpha { color: var(--t-alpha); } .cfl .t-bg-alpha { background: var(--t-alpha); }
+.cfl .t-beta  { color: var(--t-beta);  } .cfl .t-bg-beta  { background: var(--t-beta); }
+.cfl .t-gamma { color: var(--t-gamma); } .cfl .t-bg-gamma { background: var(--t-gamma); }
+
+.cfl .qbar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--surface-3); }
+.cfl .qseg { display: block; height: 100%; }
+.cfl .qkey { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 13px; color: var(--ink-3); font-family: var(--mono); }
+.cfl .qdot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: baseline; }
+.cfl .q-great, .cfl .q-mock { background: var(--do); }
+.cfl .q-good { background: var(--t-beta); }
+.cfl .q-bad { background: var(--limit); }
+.cfl .q-nocontact, .cfl .q-unknown { background: var(--ink-3); }
+
+/* ---------- limit note ---------- */
+.cfl .limitnote {
+  border-top: 1px solid var(--line-2); background: var(--limit-soft);
+  border-radius: 10px; padding: 14px 18px; margin-top: 16px;
+}
+.cfl .limitnote .tag2 {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--limit); font-weight: 600; display: block; margin-bottom: 8px;
+}
+.cfl .limitnote p { font-size: 14.5px; color: var(--ink-2); margin: 0 0 8px; }
+.cfl .limitnote p:last-child { margin: 0; }
+
+.cfl table.meta { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+.cfl table.meta td { padding: 6px 0; border-bottom: 1px solid var(--line-2); color: var(--ink-2); }
+.cfl table.meta td:last-child { text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cfl table.meta tr:last-child td { border-bottom: none; }
+
+.cfl footer { border-top: 1px solid var(--line); margin-top: 40px; padding: 24px 0 60px; }
+.cfl footer p { font-size: 14px; color: var(--ink-3); max-width: 80ch; }
+
+.cfl .visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfl * { transition: none !important; }
+}

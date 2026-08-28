@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crown Focus Logger</title>
+<meta name="description" content="Record your own Neurosity Crown focus sessions, keep the file, and read it back. Everything stays on your device.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body class="cfl cfl-standalone">
+<div class="rail">
+
+  <header>
+    <p class="eyebrow">Neurosity Crown &middot; local-first</p>
+    <h1>Your focus log</h1>
+    <p class="stand">Record a session, keep the file, read it back. This is the beginning of a way to hold your own Crown data instead of leaving it in a console you cannot query.</p>
+  </header>
+
+  <div class="privacy">
+    <p><b>Your data stays on this device.</b> Sessions are saved in this browser's own storage. There is no account, no server, and no upload. Nobody else can read them, including the person who built this. Clearing your browser data deletes them, so export a copy of anything you want to keep.</p>
+  </div>
+
+  <div class="warn hide" id="storewarn">
+    <b>Heads up.</b> <span id="storewarnmsg"></span> Anything you record now will be lost when you close this tab, so export it before you leave.
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-record" aria-selected="true" aria-controls="view-record">1. Record</button>
+    <button class="tab" role="tab" id="tab-log" aria-selected="false" aria-controls="view-log">2. Your log</button>
+    <button class="tab" role="tab" id="tab-read" aria-selected="false" aria-controls="view-read">3. Read it back</button>
+  </div>
+
+  <!-- ============ RECORD ============ -->
+  <section class="view" id="view-record" role="tabpanel" aria-labelledby="tab-record">
+
+    <div class="card">
+      <span class="k">Real data &middot; needs the headset</span>
+      <h2>Record from your Crown</h2>
+      <p class="slede">The recorder that talks to the headset runs on your computer, not in this page. That keeps your Neurosity login out of any website, including this one. Run it, then bring the file back here.</p>
+      <div class="cmd" id="cmdblock">git clone https://github.com/samanthalin130/crown-focus-logger.git
+cd crown-focus-logger
+npm install
+cp .env.example .env      # then put your Neurosity email and password in it
+npm run live              # Ctrl+C to stop</div>
+      <p class="slede">That writes <code>focus-log.csv</code> next to the project. Import it below.</p>
+      <div class="btnrow">
+        <button class="btn primary" id="btn-import">Import a CSV or backup</button>
+        <button class="btn" id="btn-sample">Load the example session</button>
+      </div>
+      <input type="file" id="fileinput" accept=".csv,.json,text/csv,application/json" multiple class="visually-hidden">
+    </div>
+
+    <div class="card">
+      <span class="k">Synthetic &middot; no headset needed</span>
+      <h2>Try it with demo data</h2>
+      <p class="slede">This makes up numbers in your browser so you can see the whole flow without a Crown. It is not connected to any headset. Sessions recorded this way are labelled <b>synthetic</b> everywhere they appear, so they cannot be mistaken for a real reading.</p>
+      <div class="readout">
+        <div class="elapsed"><span>Elapsed</span><b id="elapsed">00:00</b></div>
+        <div class="meter">
+          <div class="lbl"><span>Focus</span><b id="focusval">--</b></div>
+          <div class="track"><span class="fill focus" id="focusfill" style="width:0%"></span></div>
+        </div>
+        <div class="meter">
+          <div class="lbl"><span>Calm</span><b id="calmval">--</b></div>
+          <div class="track"><span class="fill calm" id="calmfill" style="width:0%"></span></div>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="btn-start">Start demo session</button>
+        <button class="btn" id="btn-stop" disabled>Stop and save</button>
+        <span class="empty" id="recstatus">Not recording.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LOG ============ -->
+  <section class="view" id="view-log" role="tabpanel" aria-labelledby="tab-log" hidden>
+    <h2>Your log</h2>
+    <p class="slede">Everything you have recorded or imported, held in this browser. Export any session as CSV to open it in Excel, Numbers or Sheets, or export the whole log as a backup file you can import on another device.</p>
+
+    <div class="btnrow" style="margin-bottom:18px">
+      <button class="btn" id="btn-import2">Import a file</button>
+      <button class="btn" id="btn-exportall">Export everything (backup)</button>
+      <button class="btn danger" id="btn-deleteall">Delete everything</button>
+      <span class="empty" id="storesize"></span>
+    </div>
+
+    <div class="slist" id="slist"></div>
+  </section>
+
+  <!-- ============ READ ============ -->
+  <section class="view" id="view-read" role="tabpanel" aria-labelledby="tab-read" hidden>
+    <div id="readbody"></div>
+  </section>
+
+  <footer>
+    <p>Crown Focus Logger. Focus and calm are scores produced by Neurosity's models, not physical measurements, and they are not comparable between people or between sittings. Everything on this page is computed in your browser from your own file.</p>
+  </footer>
+
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
