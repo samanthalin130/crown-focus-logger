@@ -296,7 +296,7 @@ async function openSession(id) {
     <div class="tkgrid">
       <div class="tk"><span class="n">Length</span><b class="big">${fmtDuration(a.durationMs)}</b><span class="sub">${a.rowCount} readings</span></div>
       <div class="tk"><span class="n">Usable signal</span><b class="big">${pct(a.coverage)}</b><span class="sub">${lost > 0 ? `${lost} reading${lost === 1 ? "" : "s"} left out` : "nothing left out"}</span></div>
-      <div class="tk"><span class="n">Your focus range</span><b class="big">${score(a.focus.min)} to ${score(a.focus.max)}</b><span class="sub">middle of your range: ${score(a.focus.median)}</span></div>
+      <div class="tk"><span class="n">Your focus range</span><b class="big range">${score(a.focus.min)} to ${score(a.focus.max)}</b><span class="sub">middle of your range: ${score(a.focus.median)}</span></div>
       <div class="tk"><span class="n">Longest good stretch</span><b class="big">${stretch}</b><span class="sub">${stretchSub}</span></div>
     </div>
 

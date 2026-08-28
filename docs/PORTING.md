@@ -75,10 +75,13 @@ tags and the `<script>` at the bottom of that file.
 
 ## 3. Fonts
 
-The app asks for IBM Plex Sans and IBM Plex Mono, which is what the console
-palette uses. The site already loads its own fonts, and the stylesheet falls
-back through `system-ui` if Plex is not there, so this works either way. If the
-site's Plex variables exist, point the two custom properties at them instead:
+The app names IBM Plex Sans and IBM Plex Mono, which is what the console palette
+uses, but it deliberately loads **no webfont of its own**: a Google Fonts call
+would tell a third party that someone opened their brain-data log, which would
+make the privacy claim on the page untrue. It falls back through `system-ui`.
+
+On the site this solves itself, because the site already loads Plex. Point the
+two custom properties at the site's variables so the app picks it up:
 
 ```css
 .cfl {

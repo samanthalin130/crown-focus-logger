@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Crown Focus Logger</title>
 <meta name="description" content="Record your own Neurosity Crown focus sessions, keep the file, and read it back. Everything stays on your device.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- No webfont link on purpose. Calling Google Fonts would tell a third party
+     that you opened your brain-data log, which would make the privacy claim on
+     this page false. The stylesheet falls back to the system font stack, and on
+     crown-site-v2 the site's own IBM Plex is already loaded. -->
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body class="cfl cfl-standalone">

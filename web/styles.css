@@ -136,7 +136,11 @@ body.cfl-standalone { margin: 0; background: var(--ground); }
   font-family: var(--mono); font-size: 30px; font-weight: 600; color: var(--ink);
   display: block; line-height: 1.1; font-variant-numeric: tabular-nums;
 }
+.cfl .tk .big.range { font-size: 22px; }
 .cfl .tk .sub { font-size: 13.5px; color: var(--ink-3); display: block; margin-top: 6px; }
+/* Keep the four takeaway cards the same height even when one value wraps. */
+.cfl .tkgrid { align-items: stretch; }
+.cfl .tk { display: flex; flex-direction: column; }
 
 /* ---------- buttons ---------- */
 .cfl button.btn {

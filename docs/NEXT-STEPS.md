@@ -63,11 +63,21 @@ Ordered by how much damage getting it wrong would do.
     with plausible columns and nonsense values produces a session that renders
     perfectly and means nothing. Some sanity checking on ranges would help.
 
-11. **No quota handling.** If IndexedDB fills up, `putSession` rejects and the
+11. **The demo recorder is throttled in a background tab.** Browsers clamp
+    `setInterval` in tabs that are not visible, so a demo session left running in
+    a background tab collects rows more slowly than its nominal one per second.
+    It degrades safely, because every row carries its own timestamp and the
+    analysis derives the interval from the data rather than assuming it, but the
+    row count will surprise anyone who expects one per second. A
+    `visibilitychange` note in the UI, or `requestAnimationFrame`-based timing,
+    would remove the surprise. This does not affect `logger.js`, which is a Node
+    process and is not throttled.
+
+12. **No quota handling.** If IndexedDB fills up, `putSession` rejects and the
     error surfaces as an unhandled promise rather than a message. Long sessions
     at a short interval get large: at 2000 ms, an hour is 1800 rows.
 
-12. **The two copies of the web app drift.** Once it is on the site, the files in
+13. **The two copies of the web app drift.** Once it is on the site, the files in
     `public/logger/` are a copy. See the last section of `PORTING.md`.
 
 ## Deliberately not done

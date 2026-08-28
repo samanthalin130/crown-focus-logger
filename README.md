@@ -20,8 +20,10 @@ nothing to sign into.
 
 Concretely:
 
-- The browser app makes **no network requests at all**. Not analytics, not
-  telemetry, not a font call once it is loaded.
+- The browser app makes **no network requests except for its own files**. No
+  analytics, no telemetry, no third-party webfont, no CDN. You can confirm this
+  in your browser's network tab: the only requests are to the page's own
+  scripts, stylesheet and, if you click it, the example CSV.
 - Your Neurosity email and password are only ever typed into `.env` on your own
   machine, for the command-line recorder. They are never entered into a web page.
 - Moving your log to another device means exporting a file and importing it
