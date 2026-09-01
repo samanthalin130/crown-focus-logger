@@ -1,16 +1,31 @@
 # Crown Focus Logger
 
-Record your own [Neurosity Crown](https://neurosity.co/) focus sessions to a CSV
-file you own, then read them back in your browser.
+Records a [Neurosity Crown](https://neurosity.co/) session to a CSV file you own, then reads it back in your browser. No account, no server, no upload.
 
-Two pieces, one data format:
+This is one half of independent research on a Crown headset loaned by the GFT Labs Digital Innovation Lab, the half that does the recording: 219 training trials and three full sessions came out of this tool and its console exports. The write-up is at [crown-analysis-tawny.vercel.app](https://crown-analysis-tawny.vercel.app/), and the companion tool that interprets a recording runs in a browser at [crown-debrief.vercel.app](https://crown-debrief.vercel.app/).
 
-- **`logger.js`**, a Node command-line tool that talks to the headset and writes
-  a CSV. This is the part that touches real hardware.
-- **`web/`**, a browser app that keeps your sessions on your own device and shows
-  you what is in them. No build step, no framework, no server.
+| | |
+| --- | --- |
+| Checks | **27**, all green |
+| Dependencies to record in mock mode or read a log | **none**; it runs on Node alone |
+| Network requests the browser app makes | **its own files only**: no analytics, no CDN, no webfont |
+| Where your sessions live | your own machine, in a file you keep |
 
-Independent research using hardware loaned by the GFT Labs Digital Innovation Lab.
+## Quickstart
+
+Every command below was run from a fresh `git clone` into an empty directory before it was written here, with no `npm install` at any point.
+
+```
+git clone https://github.com/samanthalin130/crown-focus-logger.git
+cd crown-focus-logger
+npm run sample   # writes a synthetic example session
+npm run web      # open the address it prints
+npm test         # 26 checks pass, 1 skips
+```
+
+The one skipped check exercises live mode, which is the only part that needs the Neurosity SDK. Run `npm install` and it runs too, for 27.
+
+Recording from a real headset needs credentials and is covered below.
 
 ## Privacy by design
 
@@ -34,21 +49,6 @@ Concretely:
 
 The trade is real and worth stating plainly: if you clear your browser data, your
 sessions go with it. Export a backup for anything you want to keep.
-
-## Try it in a minute, with no headset
-
-```bash
-npm install       # only needed for live mode, but harmless now
-npm run sample    # writes a synthetic example session
-npm run web       # open the address it prints
-```
-
-Click **Load the example session**. Everything on the page is computed in your
-browser from that file.
-
-You can also record a synthetic session in the page itself. It is clearly
-labelled as synthetic wherever it appears, so it cannot be mistaken for a real
-reading.
 
 ## Record from a real Crown
 
@@ -160,16 +160,6 @@ docs/
   PORTING.md              how to drop the app into the Astro site
 ```
 
-## Tests
-
-```bash
-npm test
-```
-
-27 tests, no test framework. They cover the CSV format, the analysis, and the
-command-line tool end to end (including a regression test for the SDK import bug
-described below). They do **not** cover the browser UI or IndexedDB.
-
 ## Honest notes
 
 **What was broken and is now fixed.** Live mode had never worked against a
@@ -202,18 +192,22 @@ parses but means nothing.
 are not missing features. Adding any of them would break the one property this
 project is for.
 
+## What this deliberately does not do
+
+- **It does not sync.** Moving a log to another device means exporting a file and importing it there. Sync would mean a server, and a server would mean somebody else could read your sessions.
+- **It does not interpret.** This tool records and shows; turning a recording into a plain-English account of what happened is [crown-debrief](https://github.com/samanthalin130/crown-debrief).
+- **It does not diagnose.** Focus and calm are model outputs from a consumer headset, not measurements, and nothing here is a health assessment.
+- **Live mode has never been run against a physical Crown by this author.** It reaches the credential check and the SDK loads, which is what the test asserts, and that is as far as the verification goes.
+
+## How this was built
+
+Designed, specified, and verified by Samantha Lin. Implementation was AI-assisted under her direction, with adversarial review and automated checks gating every shipped claim.
+
 ## Related
 
-- **[crown-debrief](https://github.com/samanthalin130/crown-debrief)** reads the
-  same CSV and writes a plain-English account of a session. It vendors this
-  logger as `collector/logger.js`. That vendored copy has the SDK bug described
-  above and needs the same fix.
+- [crown-debrief](https://github.com/samanthalin130/crown-debrief), which reads the CSV this tool writes and says what happened in the session.
+- [The research write-up](https://crown-analysis-tawny.vercel.app/), including the findings and the session analyses.
 
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
-
----
-
-Built by Samantha Lin as part of an independent exploration of brain-computer
-interfaces and AI.

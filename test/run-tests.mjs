@@ -7,7 +7,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,7 +18,14 @@ import { analyse, mean, median } from "../web/analysis.js";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 let passed = 0;
+let skipped = 0;
 const failures = [];
+
+function skip(name, why) {
+  skipped++;
+  console.log(`  skip ${name}`);
+  console.log(`       ${why}`);
+}
 
 function t(name, fn) {
   try {
@@ -303,7 +310,20 @@ t("it refuses to append to a file with a different header", () => {
   eq(readFileSync(outFile, "utf8"), "a,b,c\n1,2,3\n", "the existing file must be untouched");
 });
 
-t("live mode reaches the credential check, so the SDK actually loads", () => {
+const liveDepsInstalled = (() => {
+  try {
+    return existsSync(join(ROOT, "node_modules", "@neurosity", "sdk")) &&
+           existsSync(join(ROOT, "node_modules", "dotenv"));
+  } catch {
+    return false;
+  }
+})();
+
+const liveCheck = ("live mode reaches the credential check, so the SDK actually loads");
+if (!liveDepsInstalled) {
+  skip(liveCheck, "live mode needs the SDK and dotenv; run npm install to include this check");
+} else
+t(liveCheck, () => {
   // Regression test for @neurosity/sdk shipping "type": "module" with a
   // CommonJS require entry point, which made every live run die on import.
   let stderr = "";
@@ -337,5 +357,5 @@ t("a bad interval is rejected before anything is written", () => {
 rmSync(tmp, { recursive: true, force: true });
 
 // ---------- result ----------
-console.log(`\n${passed} passed, ${failures.length} failed`);
+console.log(`\n${passed} passed, ${failures.length} failed${skipped ? `, ${skipped} skipped` : ""}`);
 if (failures.length) process.exit(1);
